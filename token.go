@@ -2,27 +2,28 @@ package jwt
 
 import (
 	"errors"
+	"time"
 
 	jwt "github.com/golang-jwt/jwt/v4"
 )
 
 // Generate generate a new token.
-func (claims *Claims) Generate(userID uint, secretKey string) (string, error) {
+func Generate(time time.Time, userID uint, secretKey string) (string, error) {
 	// return jwt.NewWithClaims(claims.SigningMethod, claims).SignedString([]byte(claims.SecretKey))
 	return jwt.NewWithClaims(
-		claims.SigningMethod,
+		jwt.SigningMethodHS256,
 		&Claims{
-			userID: userID,
+			UserID: userID,
 			StandardClaims: jwt.StandardClaims{
-				ExpiresAt: claims.time.Unix(),
+				ExpiresAt: time.Unix(),
 			},
 		},
 	).SignedString([]byte(secretKey))
 }
 
-// IsValid fully validate if the passed token is a valid.
-func (claims *Claims) IsValid(signedToken, secretKey string) (bool, error) {
-	token, err := parseToken(claims, signedToken, secretKey)
+// IsValid fully validate if the passed token is valid.
+func IsValid(signedToken, secretKey string) (bool, error) {
+	token, err := parseToken(signedToken, secretKey)
 	if err != nil {
 		return false, err
 	}
@@ -33,20 +34,20 @@ func (claims *Claims) IsValid(signedToken, secretKey string) (bool, error) {
 }
 
 // GetUserID get user ID inside a signed token.
-func GetUserID(signingMethod jwt.SigningMethod, signedToken, secretKey string) (uint, error) {
-	token, err := parseToken(&Claims{SigningMethod: signingMethod}, signedToken, secretKey)
+func GetUserID(signedToken, secretKey string) (uint, error) {
+	token, err := parseToken(signedToken, secretKey)
 	if err != nil {
 		return -0, err
 	}
-	return token.Claims.(*Claims).userID, nil
+	return token.Claims.(*Claims).UserID, nil
 }
 
-func parseToken(claims *Claims, signedToken, secretKey string) (*jwt.Token, error) {
+func parseToken(signedToken, secretKey string) (*jwt.Token, error) {
 	return jwt.ParseWithClaims(
 		signedToken,
-		claims,
+		&Claims{},
 		func(token *jwt.Token) (interface{}, error) {
-			if token.Method != claims.SigningMethod {
+			if token.Method != jwt.SigningMethodHS256 {
 				return nil, errors.New("invalid signing algorithm")
 			}
 			return []byte(secretKey), nil
