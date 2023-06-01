@@ -7,6 +7,19 @@ import (
 	jwt "github.com/golang-jwt/jwt/v4"
 )
 
+func parseToken(signedToken, secretKey string) (*jwt.Token, error) {
+	return jwt.ParseWithClaims(
+		signedToken,
+		&Claims{},
+		func(token *jwt.Token) (interface{}, error) {
+			if token.Method != jwt.SigningMethodHS256 {
+				return nil, errors.New("invalid signing algorithm")
+			}
+			return []byte(secretKey), nil
+		},
+	)
+}
+
 // Generate generate a new token.
 func Generate(time time.Time, userID uint, secretKey string) (string, error) {
 	// return jwt.NewWithClaims(claims.SigningMethod, claims).SignedString([]byte(claims.SecretKey))
@@ -40,17 +53,4 @@ func GetUserID(signedToken, secretKey string) (uint, error) {
 		return -0, err
 	}
 	return token.Claims.(*Claims).UserID, nil
-}
-
-func parseToken(signedToken, secretKey string) (*jwt.Token, error) {
-	return jwt.ParseWithClaims(
-		signedToken,
-		&Claims{},
-		func(token *jwt.Token) (interface{}, error) {
-			if token.Method != jwt.SigningMethodHS256 {
-				return nil, errors.New("invalid signing algorithm")
-			}
-			return []byte(secretKey), nil
-		},
-	)
 }
