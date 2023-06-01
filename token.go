@@ -5,6 +5,7 @@ import (
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 )
 
 func parseToken(signedToken, secretKey string) (*jwt.Token, error) {
@@ -20,8 +21,8 @@ func parseToken(signedToken, secretKey string) (*jwt.Token, error) {
 	)
 }
 
-// Generate generate a new token.
-func Generate(time time.Time, userID uint, secretKey string) (string, error) {
+// StandardGenerate generate a new token.
+func StandardGenerate(time time.Time, userID uint, secretKey string) (string, error) {
 	// return jwt.NewWithClaims(claims.SigningMethod, claims).SignedString([]byte(claims.SecretKey))
 	return jwt.NewWithClaims(
 		jwt.SigningMethodHS256,
@@ -29,6 +30,7 @@ func Generate(time time.Time, userID uint, secretKey string) (string, error) {
 			UserID: userID,
 			StandardClaims: jwt.StandardClaims{
 				ExpiresAt: time.Unix(),
+				Id:        uuid.New().String(),
 			},
 		},
 	).SignedString([]byte(secretKey))
