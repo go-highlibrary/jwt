@@ -1,4 +1,4 @@
-module github.com/go-hl/jwt
+module github.com/go-hl/jwt/v2
 
 go 1.19
 
