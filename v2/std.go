@@ -1,7 +1,6 @@
 package jwt
 
 import (
-	"errors"
 	"time"
 
 	jwt "github.com/golang-jwt/jwt/v4"
@@ -16,9 +15,11 @@ func stdParseToken(signedToken, secretKey string) (*jwt.Token, error) {
 			return []byte(secretKey), nil
 		},
 	)
-	if errors.Is(err, jwt.ErrTokenExpired) {
-		return nil, ErrTokenExpired
-	} else if err != nil {
+	if err != nil {
+		// if errAsserted, ok := err.(*jwt.ValidationError); ok && errors.Is(errAsserted.Inner, jwt.ErrTokenExpired) {
+		if errAsserted, ok := err.(*jwt.ValidationError); ok && errAsserted.Errors == jwt.ValidationErrorExpired {
+			return nil, ErrTokenExpired
+		}
 		return nil, ErrTokenInvalid
 	}
 	return token, nil
