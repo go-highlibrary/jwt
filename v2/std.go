@@ -9,16 +9,19 @@ import (
 )
 
 func stdParseToken(signedToken, secretKey string) (*jwt.Token, error) {
-	return jwt.ParseWithClaims(
+	token, err := jwt.ParseWithClaims(
 		signedToken,
 		&StdClaims{},
 		func(token *jwt.Token) (interface{}, error) {
-			if token.Method != jwt.SigningMethodHS256 {
-				return nil, errors.New("invalid signing algorithm")
-			}
 			return []byte(secretKey), nil
 		},
 	)
+	if errors.Is(err, jwt.ErrTokenExpired) {
+		return nil, ErrTokenExpired
+	} else if err != nil {
+		return nil, ErrTokenInvalid
+	}
+	return token, nil
 }
 
 // NewStdToken generate a new token.
@@ -28,9 +31,9 @@ func NewStdToken(userID uint, time time.Time, secretKey string) (string, error) 
 		jwt.SigningMethodHS256,
 		&StdClaims{
 			UserID: userID,
-			StandardClaims: jwt.StandardClaims{
-				ExpiresAt: time.Unix(),
-				Id:        uuid.New().String(),
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(time),
+				ID:        uuid.New().String(),
 			},
 		},
 	).SignedString([]byte(secretKey))
@@ -38,12 +41,9 @@ func NewStdToken(userID uint, time time.Time, secretKey string) (string, error) 
 
 // StdIsValid fully validate if the passed token is valid.
 func StdIsValid(signedToken, secretKey string) (bool, error) {
-	token, err := stdParseToken(signedToken, secretKey)
+	_, err := stdParseToken(signedToken, secretKey)
 	if err != nil {
 		return false, err
-	}
-	if !token.Valid {
-		return false, errors.New("invalid token")
 	}
 	return true, nil
 }

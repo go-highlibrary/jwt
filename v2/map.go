@@ -7,16 +7,19 @@ import (
 )
 
 func mapParseToken(signedToken, secretKey string) (*jwt.Token, error) {
-	return jwt.ParseWithClaims(
+	token, err := jwt.ParseWithClaims(
 		signedToken,
 		&MapClaims{},
 		func(token *jwt.Token) (interface{}, error) {
-			if token.Method != jwt.SigningMethodHS256 {
-				return nil, errors.New("invalid signing algorithm")
-			}
 			return []byte(secretKey), nil
 		},
 	)
+	if errors.Is(err, jwt.ErrTokenExpired) {
+		return nil, ErrTokenExpired
+	} else if err != nil {
+		return nil, ErrTokenInvalid
+	}
+	return token, nil
 }
 
 // NewMapToken generate a new token.
@@ -33,12 +36,9 @@ func NewMapToken(userID uint, claims map[string]any, secretKey string) (string, 
 
 // MapIsValid fully validate if the passed token is valid.
 func MapIsValid(signedToken, secretKey string) (bool, error) {
-	token, err := mapParseToken(signedToken, secretKey)
+	_, err := mapParseToken(signedToken, secretKey)
 	if err != nil {
 		return false, err
-	}
-	if !token.Valid {
-		return false, errors.New("invalid token")
 	}
 	return true, nil
 }
