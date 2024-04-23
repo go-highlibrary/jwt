@@ -1,6 +1,10 @@
 package jwt
 
-import jwt "github.com/golang-jwt/jwt/v4"
+import (
+	"errors"
+
+	jwt "github.com/golang-jwt/jwt/v5"
+)
 
 func mapParseToken(signedToken, secretKey string) (*jwt.Token, error) {
 	token, err := jwt.ParseWithClaims(
@@ -11,8 +15,7 @@ func mapParseToken(signedToken, secretKey string) (*jwt.Token, error) {
 		},
 	)
 	if err != nil {
-		// if errAsserted, ok := err.(*jwt.ValidationError); ok && errors.Is(errAsserted.Inner, jwt.ErrTokenExpired) {
-		if errAsserted, ok := err.(*jwt.ValidationError); ok && errAsserted.Errors == jwt.ValidationErrorExpired {
+		if errors.Is(err, jwt.ErrTokenExpired) {
 			return nil, ErrTokenExpired
 		}
 		return nil, ErrTokenInvalid

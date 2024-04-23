@@ -1,6 +1,6 @@
 package jwt
 
-import jwt "github.com/golang-jwt/jwt/v4"
+import jwt "github.com/golang-jwt/jwt/v5"
 
 // StdClaims is the struct that represent RegisteredClaims of JWT.
 type StdClaims struct {
